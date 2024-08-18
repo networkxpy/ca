@@ -42,8 +42,58 @@ G = erdos_renyi_graph_custom(N, P)
 plt.figure(figsize=(30, 30))
 nx.draw(G, with_labels=True)
 plt.show()
+############################ Programming assignment 1 #############################
+import networkx as nx
+import matplotlib.pyplot as plt
 
-################################ GRAPH FUNCTION HARD CODE####################
+def generate_and_visualize_network(N, k_avg):
+    p = k_avg / (N - 1)
+    G = nx.erdos_renyi_graph(N, p)
+    plt.figure(figsize=(8, 6))
+    nx.draw(G, node_size=20, node_color='lightblue', with_labels=False)
+    plt.title(f"N={N}, 〈k〉={k_avg}")
+    plt.show()
+
+N = 500
+for k_avg in [0.8, 1, 8]:
+    generate_and_visualize_network(N, k_avg)
+
+def calculate_degrees(N, p, q):
+    k_blue_avg = p * (N - 1)
+    k_full_avg = p * (N - 1) + q * N
+    return k_blue_avg, k_full_avg
+
+N = 1000  # Example value
+p = 0.01  # Example value
+q = 0.005  # Example value
+
+k_blue_avg, k_full_avg = calculate_degrees(N, p, q)
+print(f"Average degree of blue subnetwork: {k_blue_avg:.2f}")
+print(f"Average degree of full network: {k_full_avg:.2f}")
+
+
+import math
+
+def minimal_probabilities(N):
+    p_min = math.log(N) / N
+    q_min = math.log(2*N) / (2*N)
+    return p_min, q_min
+
+p_min, q_min = minimal_probabilities(N)
+print(f"Minimal p: {p_min:.4f}")
+print(f"Minimal q: {q_min:.4f}")
+
+def fraction_purple_for_interactivity(N, p):
+    k_avg = p * (N - 1)
+    f_min = 1 / math.sqrt(k_avg)
+    return f_min
+
+N = 1000
+p = 0.01
+f_min = fraction_purple_for_interactivity(N, p)
+print(f"Minimum fraction of purple nodes: {f_min:.4f}")
+
+################################ GRAPH FUNCTIONs HARD CODE####################
 import math
 import numpy as np
 from scipy.optimize import fsolve
