@@ -198,3 +198,153 @@ results
 
 for i in range(len(results)):
   print("TOP ",i+1,":",paragraphs[results[i]])
+################################## Topic modelling ###############################
+import gensim
+import gensim.corpora as corpora
+from gensim.models import LdaModel
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+import nltk
+
+# Download required NLTK data files
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+# Sample documents
+documents = [
+    "Artificial intelligence and machine learning are transforming industries.",
+    "Deep learning techniques are being used in many AI applications.",
+    "Natural language processing is a crucial area of AI.",
+    "Big data analytics involves processing large amounts of information.",
+    "Data science and AI are closely related fields."
+]
+
+# Preprocess the documents
+stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
+
+def preprocess(text):
+    tokens = word_tokenize(text.lower())
+    tokens = [lemmatizer.lemmatize(word) for word in tokens if word.isalnum() and word not in stop_words]
+    return tokens
+
+# Preprocess all documents
+texts = [preprocess(doc) for doc in documents]
+
+# Create a dictionary and corpus needed for LDA
+dictionary = corpora.Dictionary(texts)
+corpus = [dictionary.doc2bow(text) for text in texts]
+
+# Build the LDA model
+num_topics = 2  # Number of topics
+lda_model = LdaModel(corpus=corpus, id2word=dictionary, num_topics=num_topics, random_state=42)
+
+# Display the topics
+topics = lda_model.print_topics(num_words=4)
+for idx, topic in topics:
+    print(f"Topic {idx+1}: {topic}")
+############################################## classification ####################################
+# Step 1: Import Necessary Libraries
+import pandas as pd
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+import gensim
+import gensim.corpora as corpora
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+
+# Step 2: Load the Dataset
+url = 'https://figshare.com/ndownloader/files/26202692'
+df = pd.read_csv(url)
+
+# Step 3: Data Exploration
+print(df.head())  # Inspect the first few rows
+print(df['label'].value_counts())  # Check class distribution
+
+# Step 4: Text Preprocessing
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
+
+def preprocess(text):
+    tokens = word_tokenize(text.lower())  # Tokenize text
+    tokens = [lemmatizer.lemmatize(word) for word in tokens if word.isalnum() and word not in stop_words]  # Remove stopwords and lemmatize
+    return ' '.join(tokens)
+
+# Apply preprocessing to the 'text' column
+df['cleaned_text'] = df['text'].apply(preprocess)
+
+# Step 5: Topic Modeling with LDA
+texts = [text.split() for text in df['cleaned_text']]  # Prepare texts for LDA
+dictionary = corpora.Dictionary(texts)
+corpus = [dictionary.doc2bow(text) for text in texts]
+
+lda_model = gensim.models.LdaModel(corpus, num_topics=5, id2word=dictionary, passes=15, random_state=42)
+
+# Print the topics discovered by LDA
+for idx, topic in lda_model.print_topics(num_words=5):
+    print(f"Topic {idx+1}: {topic}")
+
+# Infer topics for each document
+df['topics'] = [lda_model[dictionary.doc2bow(text)] for text in texts]
+
+# Step 6: Feature Extraction using TF-IDF
+tfidf = TfidfVectorizer(max_features=5000)
+X_tfidf = tfidf.fit_transform(df['cleaned_text'])
+
+# Convert LDA topics to a feature matrix
+import numpy as np
+X_topics = np.array([[topic[1] for topic in doc] for doc in df['topics']])
+X = np.hstack((X_tfidf.toarray(), X_topics))  # Combine TF-IDF and topic features
+
+y = df['label']  # Target labels
+
+# Step 7: Train-Test Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Step 8: Apply Classification Algorithms
+# Logistic Regression
+lr = LogisticRegression(max_iter=1000)
+lr.fit(X_train, y_train)
+y_pred_lr = lr.predict(X_test)
+print("Logistic Regression Performance:")
+print(classification_report(y_test, y_pred_lr))
+
+# Support Vector Machine (SVM)
+svm = SVC(kernel='linear')
+svm.fit(X_train, y_train)
+y_pred_svm = svm.predict(X_test)
+print("SVM Performance:")
+print(classification_report(y_test, y_pred_svm))
+
+# Random Forest
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+y_pred_rf = rf.predict(X_test)
+print("Random Forest Performance:")
+print(classification_report(y_test, y_pred_rf))
+
+# Step 9: Performance Evaluation
+# Accuracy of each model
+print(f"Logistic Regression Accuracy: {accuracy_score(y_test, y_pred_lr)}")
+print(f"SVM Accuracy: {accuracy_score(y_test, y_pred_svm)}")
+print(f"Random Forest Accuracy: {accuracy_score(y_test, y_pred_rf)}")
+
+# Step 10 (Optional): Semantic Analysis with Word2Vec
+# Uncomment this part if you want to use word embeddings instead of TF-IDF
+# from gensim.models import Word2Vec
+# w2v_model = Word2Vec(sentences=texts, vector_size=100, window=5, min_count=5, workers=4)
+# w2v_vectors = np.array([np.mean([w2v_model.wv[word] for word in doc if word in w2v_model.wv] or [np.zeros(100)], axis=0) for doc in texts])
+
+# Continue classification using w2v_vectors as features
